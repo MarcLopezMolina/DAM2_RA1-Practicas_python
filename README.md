@@ -1,97 +1,41 @@
-🛠️ Mini-CRM de Eventos
+# Mini-CRM de Eventos
 
-Esta es una aplicación de consola en Python diseñada para gestionar clientes, eventos y ventas utilizando archivos CSV. El proyecto integra conceptos de programación orientada a objetos, manejo de fechas con datetime, y operaciones con colecciones (list, dict, set, tuple), permitiendo generar informes y métricas de manera sencilla.
+Aplicación de consola en Python para gestionar **clientes, eventos y ventas** mediante archivos CSV. Integra **POO**, manejo de **fechas (`datetime`)** y operaciones con colecciones, permitiendo generar métricas e informes.
 
-🎯 Objetivos del proyecto
+---
 
-📂 Leer y escribir datos desde archivos CSV (clientes.csv, eventos.csv, ventas.csv).
+## Funcionalidades principales
 
-🧑‍💼 Gestionar información de clientes, 🗓️ eventos y 💰 ventas.
+- **Cargar CSV**: clientes, eventos y ventas.  
+- **Listar tablas**: mostrar datos de clientes, eventos o ventas.  
+- **Alta de cliente**: registro con validación de email y fecha, guardado incremental.  
+- **Filtrar ventas por rango de fechas**.  
+- **Estadísticas**: ingresos totales, ingresos por evento, categorías, días hasta el próximo evento, resumen de precios.  
+- **Exportar informe**: `informe_resumen.csv` con totales por evento.  
 
-🏷️ Implementar clases propias (Cliente, Evento, Venta) con métodos útiles:
+---
 
-Cliente.antiguedad_dias() → días desde el registro del cliente
+## Características
 
-Evento.dias_hasta_evento() → días restantes hasta el evento
+- Clases: `Cliente`, `Evento`, `Venta` con métodos útiles (`antiguedad_dias()`, `dias_hasta_evento()`).  
+- Manejo de errores (`FileNotFoundError`) y validaciones básicas.  
+- Colecciones: `dict`, `list`, `set`, `tuple`.  
+- Menú interactivo en consola.  
 
-📅 Trabajar con fechas para filtrar eventos o calcular antigüedad.
+---
 
-📊 Generar métricas y resúmenes que pueden exportarse a CSV (informe_resumen.csv).
+## Flujo de uso
 
-⚙️ Funcionalidades principales
+1. Ejecutar el script principal.  
+2. Seleccionar opción del menú: cargar datos, listar, alta, filtrar, estadísticas, exportar o salir.  
+3. Interactuar con los datos de manera segura y estructurada.  
 
-📥 Cargar CSV
+---
 
-Importa los archivos clientes.csv, eventos.csv y ventas.csv.
+## Tecnologías
 
-Manejo de errores si los archivos no existen (FileNotFoundError).
-
-📋 Listar tablas
-
-Muestra de forma legible los datos de clientes, eventos o ventas.
-
-➕ Alta de cliente
-
-Añadir un nuevo cliente solicitando nombre, email y fecha de registro.
-
-Validación de email y fecha.
-
-Guardado automático e incremental en clientes.csv.
-
-📆 Filtrar ventas por rango de fechas
-
-Permite consultar ventas entre dos fechas específicas de eventos.
-
-Muestra los datos completos de la venta y del evento correspondiente.
-
-📈 Estadísticas y métricas
-
-💵 Ingresos totales de todas las ventas.
-
-💰 Ingresos por evento.
-
-🏷️ Categorías de eventos disponibles.
-
-⏳ Días hasta el evento más próximo.
-
-📊 Resumen de precios de eventos (mínimo, máximo y promedio).
-
-📝 Exportar informe
-
-Genera informe_resumen.csv con totales de ingresos por evento.
-
-Permite análisis posterior o integración con otras herramientas.
-
-🛡️ Validaciones y buenas prácticas
-
-✅ Manejo de errores en lectura de archivos CSV.
-
-✅ Validación mínima de emails.
-
-✅ Evita colisiones de IDs generando automáticamente los IDs de nuevos clientes.
-
-✅ Uso de datetime para garantizar la consistencia de fechas.
-
-🚀 Tecnologías y conceptos utilizados
-
-🐍 Python 3.x
-
-🗃️ Archivos CSV para entrada y salida de datos
-
-🧩 POO: clases, métodos y __str__/__repr__ para legibilidad
-
-📅 datetime para cálculos de fechas y rangos
-
-🏗️ Colecciones: dict, list, set, tuple
-
-📊 Cálculo de métricas y generación de informes
-
-🖼️ Flujo de uso
-
-Ejecutar el script principal.
-
-Elegir una opción del menú:
-
-Cargar datos, listar, dar de alta clientes, filtrar ventas, estadísticas, exportar informe o salir.
-
-Trabajar con los datos de manera interactiva desde consola.
+- Python 3.x  
+- CSV  
+- Programación orientada a objetos (POO)  
+- `datetime`  
+- Colecciones (`dict`, `list`, `set`, `tuple`)  
