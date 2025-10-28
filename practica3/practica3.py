@@ -1,125 +1,182 @@
-import csv  # Módulo para manejar archivos CSV
+import csv
 
 # ---------------------------------------------------------------------------
-# Clase para gestionar los horarios de empleados desde un CSV
+# Clase RegistroHorario: representa un turno de trabajo de un empleado
+# ---------------------------------------------------------------------------
+
+class RegistroHorario:
+    def __init__(self, empleado: str, dia: str, entrada: int, salida: int):
+        self.empleado = empleado
+        self.dia = dia
+        self.entrada = entrada
+        self.salida = salida
+
+    def duracion(self) -> int:
+        """Devuelve la cantidad de horas trabajadas en este registro."""
+        return self.salida - self.entrada
+
+
+# ---------------------------------------------------------------------------
+# Clase Empleado: almacena todos los registros de un trabajador
+# ---------------------------------------------------------------------------
+
+class Empleado:
+    def __init__(self, nombre: str):
+        self.nombre = nombre
+        self.registros = []  # Lista de objetos RegistroHorario
+
+    def agregar_registro(self, registro: RegistroHorario):
+        """Agrega un nuevo registro al empleado."""
+        self.registros.append(registro)
+
+    def horas_totales(self) -> int:
+        """Devuelve el total de horas trabajadas en la semana."""
+        return sum(r.duracion() for r in self.registros)
+
+    def dias_trabajados(self) -> int:
+        """Devuelve el número de días distintos trabajados."""
+        return len({r.dia for r in self.registros})
+
+    def fila_csv(self):
+        """Devuelve una fila con los datos del resumen para escribir en CSV."""
+        return [self.nombre, self.dias_trabajados(), self.horas_totales()]
+
+
+# ---------------------------------------------------------------------------
+# Clase GestorHorarios: gestiona la lectura, el procesamiento y los informes
 # ---------------------------------------------------------------------------
 
 class GestorHorarios:
     def __init__(self, fichero_entrada):
-        """
-        Inicializa el gestor con el nombre del archivo CSV de entrada.
-        """
         self.fichero_entrada = fichero_entrada
-        self.datos = []  # Lista que almacenará diccionarios con los registros de empleados
+        self.registros = []  # Lista de RegistroHorario
+        self.empleados = {}  # nombre -> objeto Empleado
 
+    # ----------------------- Lectura del CSV -------------------------------
     def leer_csv(self):
-        """
-        Lee el archivo CSV de entrada y guarda los registros en memoria.
-        Se espera un CSV con columnas: nombre;dia;entrada;salida
-        """
+        """Lee el archivo de entrada y crea los objetos RegistroHorario y Empleado."""
         with open(self.fichero_entrada, newline='', encoding='utf-8') as f:
-            lector = csv.reader(f, delimiter=';')  # Separa por ';'
+            lector = csv.reader(f, delimiter=';')
             for fila in lector:
-                if len(fila) == 4:  # Aseguramos que haya 4 columnas
+                if len(fila) == 4:
                     nombre, dia, entrada, salida = fila
-                    # Convertimos entrada y salida a enteros y guardamos en un diccionario
-                    self.datos.append({
-                        'nombre': nombre,
-                        'dia': dia,
-                        'entrada': int(entrada),
-                        'salida': int(salida)
-                    })
-        print(f"Registros leídos: {len(self.datos)}")  # Información de cuántos registros se leyeron
+                    registro = RegistroHorario(nombre, dia, int(entrada), int(salida))
+                    self.registros.append(registro)
+
+                    # Añadimos el registro al empleado correspondiente
+                    if nombre not in self.empleados:
+                        self.empleados[nombre] = Empleado(nombre)
+                    self.empleados[nombre].agregar_registro(registro)
+
+        print(f"Registros leídos: {len(self.registros)}")
+
+    # ----------------------- Generar archivos -------------------------------
 
     def generar_resumen_horarios(self):
-        """
-        Genera un CSV con todos los registros y calcula las horas trabajadas.
-        """
+        """Genera un CSV con todos los registros detallados."""
         with open('resumen_horarios.csv', 'w', newline='', encoding='utf-8') as f:
             escritor = csv.writer(f, delimiter=';')
-            # Cabecera del CSV
-            escritor.writerow(['Nombre', 'Día', 'Entrada', 'Salida', 'Horas'])
-            # Escribimos cada registro con el cálculo de horas trabajadas
-            for r in self.datos:
-                horas = r['salida'] - r['entrada']
-                escritor.writerow([r['nombre'], r['dia'], r['entrada'], r['salida'], horas])
+            escritor.writerow(['Empleado', 'Día', 'Entrada', 'Salida', 'Horas'])
+            for r in self.registros:
+                escritor.writerow([r.empleado, r.dia, r.entrada, r.salida, r.duracion()])
         print("-> Generado resumen_horarios.csv")
 
     def generar_madrugadores(self, hora_referencia=9):
-        """
-        Genera un CSV con empleados que entran antes de la hora de referencia.
-        """
-        # Filtramos los empleados que entran antes de la hora de referencia
-        madrugadores = [r for r in self.datos if r['entrada'] < hora_referencia]
+        """Genera un CSV con empleados que comienzan antes de una hora dada."""
+        madrugadores = {r.empleado for r in self.registros if r.entrada < hora_referencia}
         with open('madrugadores.csv', 'w', newline='', encoding='utf-8') as f:
             escritor = csv.writer(f, delimiter=';')
-            escritor.writerow(['Nombre', 'Día', 'Entrada', 'Salida'])
-            for r in madrugadores:
-                escritor.writerow([r['nombre'], r['dia'], r['entrada'], r['salida']])
+            escritor.writerow(['Empleado', 'Hora de entrada <', hora_referencia])
+            for e in madrugadores:
+                escritor.writerow([e])
         print(f"-> Generado madrugadores.csv (hora_referencia={hora_referencia})")
 
     def generar_en_dos_dias(self, dia1='Lunes', dia2='Viernes'):
-        """
-        Genera un CSV con empleados que trabajan en ambos días especificados.
-        """
-        empleados_por_dia = {}  # Diccionario con sets de empleados por día
-        for r in self.datos:
-            empleados_por_dia.setdefault(r['dia'], set()).add(r['nombre'])
+        """Genera un CSV con empleados que trabajaron en ambos días."""
+        empleados_por_dia = {}
+        for r in self.registros:
+            empleados_por_dia.setdefault(r.dia, set()).add(r.empleado)
 
-        # Intersección de empleados que trabajan en ambos días
         empleados_en_ambos = empleados_por_dia.get(dia1, set()) & empleados_por_dia.get(dia2, set())
 
         with open('en_dos_dias.csv', 'w', newline='', encoding='utf-8') as f:
             escritor = csv.writer(f, delimiter=';')
-            escritor.writerow(['Empleados que trabajan en', dia1, 'y', dia2])
+            escritor.writerow([f'Empleados que trabajaron en {dia1} y {dia2}'])
             for e in empleados_en_ambos:
                 escritor.writerow([e])
         print(f"-> Generado en_dos_dias.csv ({dia1} & {dia2})")
 
-    def generar_resumen_semanal(self):
-        """
-        Genera un CSV con el total de horas trabajadas por empleado en la semana.
-        """
-        resumen = {}  # Diccionario: clave=nombre, valor=horas totales
-        for r in self.datos:
-            nombre = r['nombre']
-            horas = r['salida'] - r['entrada']
-            resumen[nombre] = resumen.get(nombre, 0) + horas  # Sumamos horas por empleado
+    def generar_exclusivos(self, dia1='Sábado', dia2='Domingo'):
+        """Empleados que trabajaron el sábado pero no el domingo."""
+        empleados_por_dia = {}
+        for r in self.registros:
+            empleados_por_dia.setdefault(r.dia, set()).add(r.empleado)
 
+        exclusivos = empleados_por_dia.get(dia1, set()) - empleados_por_dia.get(dia2, set())
+
+        with open('exclusivos.csv', 'w', newline='', encoding='utf-8') as f:
+            escritor = csv.writer(f, delimiter=';')
+            escritor.writerow([f'Empleados que trabajaron solo el {dia1}'])
+            for e in exclusivos:
+                escritor.writerow([e])
+        print(f"-> Generado exclusivos.csv ({dia1} - {dia2})")
+
+    def generar_resumen_semanal(self):
+        """Genera resumen_semanal.csv con días trabajados y horas totales."""
         with open('resumen_semanal.csv', 'w', newline='', encoding='utf-8') as f:
             escritor = csv.writer(f, delimiter=';')
-            escritor.writerow(['Nombre', 'Total Horas'])
-            for nombre, horas in resumen.items():
-                escritor.writerow([nombre, horas])
+            escritor.writerow(['Empleado', 'Días trabajados', 'Horas totales'])
+            for emp in self.empleados.values():
+                escritor.writerow(emp.fila_csv())
         print("-> Generado resumen_semanal.csv")
+
+    def generar_filtrado_duracion(self, horas_min=6):
+        """Empleados que han trabajado al menos X horas en todas sus jornadas."""
+        empleados_validos = {
+            nombre for nombre, emp in self.empleados.items()
+            if all(r.duracion() >= horas_min for r in emp.registros)
+        }
+
+        with open('filtrado_duracion.csv', 'w', newline='', encoding='utf-8') as f:
+            escritor = csv.writer(f, delimiter=';')
+            escritor.writerow([f'Empleados con ≥ {horas_min} h en todas sus jornadas'])
+            for e in empleados_validos:
+                escritor.writerow([e])
+        print(f"-> Generado filtrado_duracion.csv (≥ {horas_min}h por jornada)")
+
+    def generar_resumen_clases(self):
+        """Genera resumen_clases.csv con los datos de los objetos Empleado."""
+        with open('resumen_clases.csv', 'w', newline='', encoding='utf-8') as f:
+            escritor = csv.writer(f, delimiter=';')
+            escritor.writerow(['Empleado', 'Días trabajados', 'Horas totales'])
+            for emp in self.empleados.values():
+                escritor.writerow(emp.fila_csv())
+        print("-> Generado resumen_clases.csv")
 
 
 # ---------------------------------------------------------------------------
-# Funciones de menú y flujo principal
+# Menú principal
 # ---------------------------------------------------------------------------
 
 def menu():
-    """
-    Muestra el menú de opciones al usuario.
-    """
     print("\n=== MENÚ DE OPCIONES ===")
-    print("1. Generar resumen de horarios (todos los registros)")
-    print("2. Generar madrugadores (entrada antes de 9)")
+    print("1. Generar resumen de horarios")
+    print("2. Generar madrugadores")
     print("3. Generar empleados que trabajan en Lunes y Viernes")
-    print("4. Generar resumen semanal de horas")
-    print("5. Salir")
+    print("4. Generar empleados exclusivos (Sábado - Domingo)")
+    print("5. Generar resumen semanal")
+    print("6. Filtrado por duración (≥ 6h)")
+    print("7. Generar resumen usando clases (Empleado)")
+    print("8. Salir")
 
 
 def main():
-    """
-    Función principal que crea el gestor y ejecuta el bucle del menú.
-    """
-    gestor = GestorHorarios('horarios.csv')  # Se indica el CSV de entrada
-    gestor.leer_csv()  # Carga los registros en memoria
+    gestor = GestorHorarios('horarios.csv')
+    gestor.leer_csv()
 
     while True:
         menu()
-        opcion = input("Elige una opción (1-5): ")
+        opcion = input("Elige una opción (1-8): ")
 
         if opcion == '1':
             gestor.generar_resumen_horarios()
@@ -128,8 +185,14 @@ def main():
         elif opcion == '3':
             gestor.generar_en_dos_dias()
         elif opcion == '4':
-            gestor.generar_resumen_semanal()
+            gestor.generar_exclusivos()
         elif opcion == '5':
+            gestor.generar_resumen_semanal()
+        elif opcion == '6':
+            gestor.generar_filtrado_duracion()
+        elif opcion == '7':
+            gestor.generar_resumen_clases()
+        elif opcion == '8':
             print("Saliendo del programa. ¡Hasta luego!")
             break
         else:
@@ -137,7 +200,7 @@ def main():
 
 
 # ---------------------------------------------------------------------------
-# Punto de entrada del programa
+# Punto de entrada
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
